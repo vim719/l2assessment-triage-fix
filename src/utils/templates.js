@@ -1,43 +1,23 @@
-/**
- * Recommendation Templates - Maps categories to recommended actions
- */
-
 const actionTemplates = {
-  "Billing Issue": "Ask user to check billing portal.",
-  "Technical Problem": "Suggest user to restart their browser.",
-  "General Inquiry": "Respond with FAQ link.",
-  "Feature Request": "Ask user to check billing portal.",
-  "Unknown": "Review manually."
-}
+  "Billing Issue": "Check billing portal and verify payment status — escalate to billing team if needed.",
+  "Technical Problem": "Gather error details and reproduction steps — route to engineering if persistent.",
+  "General Inquiry": "Respond with relevant FAQ or product documentation link.",
+  "Feature Request": "Log in the product feedback tracker and acknowledge the suggestion.",
+  "Unknown": "Flag for manual review — no category matched."
+};
 
-/**
- * Get recommended action for a given category
- * 
- * @param {string} category - The message category
- * @param {string} urgency - The urgency level
- * @returns {string} - Recommended next step
- */
 export function getRecommendedAction(category, urgency) {
-  return actionTemplates[category] || "No recommendation available."
+  const base = actionTemplates[category] || actionTemplates["Unknown"];
+  if (urgency === "High" || urgency === "Urgent") {
+    return `[PRIORITY] ${base} — Respond within 1 hour.`;
+  }
+  return base;
 }
 
-/**
- * Get all available categories
- * 
- * @returns {string[]} - List of categories
- */
 export function getAvailableCategories() {
-  return Object.keys(actionTemplates)
+  return Object.keys(actionTemplates);
 }
 
-/**
- * Determines if message should be escalated
- * 
- * @param {string} category - The message category
- * @param {string} urgency - The urgency level
- * @param {string} message - The original message
- * @returns {boolean} - Whether to escalate
- */
 export function shouldEscalate(category, urgency, message) {
-  return message.length > 100
+  return urgency === "High" || urgency === "Urgent" || message.length > 100;
 }

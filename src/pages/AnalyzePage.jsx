@@ -10,7 +10,6 @@ function AnalyzePage() {
   const [isLoading, setIsLoading] = useState(false)
 
   useEffect(() => {
-    // Check for example message from home page
     const exampleMessage = localStorage.getItem('exampleMessage')
     if (exampleMessage) {
       setMessage(exampleMessage)
@@ -26,29 +25,24 @@ function AnalyzePage() {
 
     setIsLoading(true)
     setResults(null)
-    
+
     try {
-      // Run categorization (LLM call)
-      const { category, reasoning } = await categorizeMessage(message)
-      
-      // Calculate urgency (rule-based)
-      const urgency = calculateUrgency(message)
-      
-      // Get recommended action (template-based)
-      const recommendedAction = getRecommendedAction(category)
-      
+      const { category, reasoning, priority, actionRequired } = await categorizeMessage(message)
+      const urgency = calculateUrgency(message, priority)
+      const recommendedAction = getRecommendedAction(category, urgency)
+
       const analysisResult = {
         message,
         category,
         urgency,
         recommendedAction,
         reasoning,
+        actionRequired,
         timestamp: new Date().toISOString()
       }
 
       setResults(analysisResult)
 
-      // Save to history
       const history = JSON.parse(localStorage.getItem('triageHistory') || '[]')
       history.push(analysisResult)
       localStorage.setItem('triageHistory', JSON.stringify(history))
@@ -74,7 +68,6 @@ function AnalyzePage() {
             Paste a customer support message below to automatically categorize and prioritize.
           </p>
 
-          {/* Input Section */}
           <div className="mb-4">
             <label className="block text-sm font-semibold text-gray-700 mb-2">
               Customer Message
@@ -91,7 +84,6 @@ function AnalyzePage() {
             </div>
           </div>
 
-          {/* Action Buttons */}
           <div className="flex space-x-3">
             <button
               onClick={handleAnalyze}
@@ -124,11 +116,10 @@ function AnalyzePage() {
           </div>
         </div>
 
-        {/* Results Section */}
         {results && (
           <div className="bg-white rounded-lg shadow-md p-6">
             <h2 className="text-xl font-bold text-gray-900 mb-4">Analysis Results</h2>
-            
+
             <div className="space-y-4">
               <div>
                 <div className="text-sm font-semibold text-gray-600 mb-1">Category</div>
@@ -140,11 +131,20 @@ function AnalyzePage() {
               <div>
                 <div className="text-sm font-semibold text-gray-600 mb-1">Urgency Level</div>
                 <div className={`inline-block px-4 py-2 rounded-lg font-semibold ${
-                  results.urgency === 'High' ? 'bg-red-200 text-red-900' :
+                  results.urgency === 'High' || results.urgency === 'Urgent' ? 'bg-red-200 text-red-900' :
                   results.urgency === 'Medium' ? 'bg-yellow-200 text-yellow-900' :
                   'bg-green-200 text-green-900'
                 }`}>
                   {results.urgency}
+                </div>
+              </div>
+
+              <div>
+                <div className="text-sm font-semibold text-gray-600 mb-1">Action Required</div>
+                <div className={`inline-block px-4 py-2 rounded-lg font-semibold ${
+                  results.actionRequired ? 'bg-orange-100 text-orange-800' : 'bg-gray-100 text-gray-600'
+                }`}>
+                  {results.actionRequired ? 'Yes — needs response' : 'No — informational'}
                 </div>
               </div>
 
@@ -176,7 +176,7 @@ function AnalyzePage() {
                 }}
                 className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 font-semibold"
               >
-                📋 Copy Results
+                Copy Results
               </button>
             </div>
           </div>
